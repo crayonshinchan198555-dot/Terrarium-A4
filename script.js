@@ -1,61 +1,135 @@
-/*The solution to draggable elements was inspired by w3schools solution on creating a [Draggable HTML Element](https://www.w3schools.com/howto/howto_js_draggable.asp).*/
 
-dragElement(document.getElementById('plant1'));
-dragElement(document.getElementById('plant2'));
-dragElement(document.getElementById('plant3'));
-dragElement(document.getElementById('plant4'));
-dragElement(document.getElementById('plant5'));
-dragElement(document.getElementById('plant6'));
-dragElement(document.getElementById('plant7'));
-dragElement(document.getElementById('plant8'));
-dragElement(document.getElementById('plant9'));
-dragElement(document.getElementById('plant10'));
-dragElement(document.getElementById('plant11'));
-dragElement(document.getElementById('plant12'));
-dragElement(document.getElementById('plant13'));
-dragElement(document.getElementById('plant14'));
+const pickSound = document.getElementById("pickSound");
+const dropSound = document.getElementById("dropSound");
 
-/*"A closure is the combination of a function bundled together (enclosed) with references to its surrouding state (the lexical environment). In other words, a closure gives you access to an outer function's scope from an inner function." Create a closure so that you can track the dragged element*/
+const terrarium = document.getElementById("terrarium");
+const plants = document.querySelectorAll(".plant");
 
-function dragElement(terrariumElement) {
-    // set 4 positions for positioning on the screen
-    let pos1 = 0,  // Previous mouse X position
-        pos2 = 0,  // Previous mouse Y position  
-        pos3 = 0,  // Current mouse X position
-        pos4 = 0;  // Current mouse Y position
-    terrariumElement.onpointerdown = pointerDrag;
+// ===============================
+// ⭐ STORE ORIGINAL POSITIONS (a)
+// ===============================
+const originalPositions = new Map();
 
-    function pointerDrag(e) {
-    e.preventDefault();
-    console.log(e);
-    // Get the initial mouse cursor position for pos3 and pos4
-    pos3 = e.clientX;  // X coordinate where drag started
-    pos4 = e.clientY;  // Y coordinate where drag started
-    // When the mouse moves, start the drag
-    document.onpointermove = elementDrag;
-    // When the mouse is lifted, stop the drag
-    document.onpointerup = stopElementDrag;
-  }
+window.addEventListener("load", () => {
+    plants.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        originalPositions.set(el.id, {
+            left: el.offsetLeft,
+            top: el.offsetTop
+        });
+    });
+});
 
-  function elementDrag(e) {
-    // Calculate the new cursor position
-    // pos1 = where the Xmouse WAS - where it IS
-    pos1 = pos3 - e.clientX;  
-    // pos2 = where the Ymouse WAS - where it IS
-    pos2 = pos4 - e.clientY;      
-    // reset pos3 ti current location of Xmouse
-    pos3 = e.clientX;  // New current X position
-    // reset pos4 to current location of Ymouse
-    pos4 = e.clientY;  // New current Y position
-    console.log(pos1, pos2, pos3,pos4);
-    // set the element's new position:
-    terrariumElement.style.top = terrariumElement.offsetTop - pos2 + 'px';
-    terrariumElement.style.left = terrariumElement.offsetLeft - pos1 + 'px';
-  }
+// ===============================
+// ⭐ INIT DRAG + EVENTS
+// ===============================
+plants.forEach(dragElement);
 
-  function stopElementDrag() {
-    // stop calculating when mouse is released
-    document.onpointerup = null;
-    document.onpointermove = null;
-  }
+function dragElement(el) {
+
+    el.style.position = "absolute";
+
+    // ===== restore saved position (e) =====
+    const saved = JSON.parse(localStorage.getItem(el.id));
+
+    if (saved) {
+        el.style.left = saved.left;
+        el.style.top = saved.top;
+    }
+
+    let offsetX = 0;
+    let offsetY = 0;
+
+    el.addEventListener("pointerdown", startDrag);
+
+    // ===============================
+    // ⭐ b) bring to front
+    // ===============================
+    el.addEventListener("dblclick", () => {
+        el.style.zIndex = 1000;
+    });
+
+    // ===============================
+    // ⭐ c) hover glow (CSS class toggle)
+    // ===============================
+    el.addEventListener("mouseenter", () => {
+        el.classList.add("hovered");
+    });
+
+    el.addEventListener("mouseleave", () => {
+        el.classList.remove("hovered");
+    });
+
+    function startDrag(e) {
+        e.preventDefault();
+
+        pickSound?.play().catch(() => {});
+
+        const rect = el.getBoundingClientRect();
+
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        document.addEventListener("pointermove", dragMove);
+        document.addEventListener("pointerup", stopDrag);
+    }
+
+    function dragMove(e) {
+
+        const jar = terrarium.getBoundingClientRect();
+
+        let x = e.clientX - jar.left - offsetX;
+        let y = e.clientY - jar.top - offsetY;
+
+        // ===============================
+        // ⭐ d) boundary restriction
+        // ===============================
+        x = Math.max(0, Math.min(x, jar.width - el.offsetWidth));
+        y = Math.max(0, Math.min(y, jar.height - el.offsetHeight));
+
+        el.style.left = x + "px";
+        el.style.top = y + "px";
+    }
+
+    function stopDrag() {
+
+        dropSound?.play().catch(() => {});
+
+        // ===============================
+        // ⭐ e) save position
+        // ===============================
+        localStorage.setItem(el.id, JSON.stringify({
+            left: el.style.left,
+            top: el.style.top
+        }));
+
+        document.removeEventListener("pointermove", dragMove);
+        document.removeEventListener("pointerup", stopDrag);
+    }
+}
+
+// ===============================
+// ⭐ a) RESET WITH ANIMATION
+// ===============================
+function resetPlants() {
+
+    plants.forEach(el => {
+
+        const original = originalPositions.get(el.id);
+
+        if (!original) return;
+
+        // enable smooth animation
+        el.style.transition = "all 1s ease";
+
+        el.style.left = original.left + "px";
+        el.style.top = original.top + "px";
+
+        localStorage.removeItem(el.id);
+
+        // remove transition after animation
+        setTimeout(() => {
+            el.style.transition = "";
+        }, 1000);
+    });
 }

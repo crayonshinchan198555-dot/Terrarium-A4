@@ -100,34 +100,3 @@ h1 {
   z-index: -1;
 }
 
-0%{ 
-  transform:rotate(-2deg); 
-}
-
-50%{ 
-  transform:rotate(2deg); 
-}
-
-100%{ 
-  transform:rotate(-2deg); 
-} 
-
-.plant{ 
-  position:absolute; 
-  max-width:150%; 
-  max-height:150%; 
-  z-index:2; 
-  animation:sway 4s ease-in-out infinite; 
-  transition: top 1s, left 1s, box-shadow 0.3s; 
-} 
-
-.plant:hover{ 
-  box-shadow:0 0 20px lightgreen; 
-} 
-
-#resetBtn{ 
-  margin:10px; 
-  padding:10px 20px; 
-  cursor:pointer; 
-}
-

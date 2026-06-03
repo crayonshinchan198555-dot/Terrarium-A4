@@ -15,170 +15,47 @@ dragElement(document.getElementById('plant12'));
 dragElement(document.getElementById('plant13'));
 dragElement(document.getElementById('plant14'));
 
-const originalPositions = {};
-let highestZ = 10;
-
-window.onload = function(){
-
-    document.querySelectorAll(".plant").forEach(plant=>{
-
-        originalPositions[plant.id]={
-            left: plant.offsetLeft,
-            top: plant.offsetTop
-        };
-
-        // load saved position
-        let saved = localStorage.getItem(plant.id);
-
-        if(saved){
-
-            saved = JSON.parse(saved);
-
-            plant.style.left=saved.left;
-            plant.style.top=saved.top;
-        }
-    });
-};
-
-
-// Reset 
-
-document.getElementById("resetBtn")
-.addEventListener("click",()=>{
-
-document.querySelectorAll(".plant")
-.forEach(plant=>{
-
-plant.style.left=
-originalPositions[plant.id].left+"px";
-
-plant.style.top=
-originalPositions[plant.id].top+"px";
-
-});
-
-});
-
-
+/*"A closure is the combination of a function bundled together (enclosed) with references to its surrouding state (the lexical environment). In other words, a closure gives you access to an outer function's scope from an inner function." Create a closure so that you can track the dragged element*/
 
 function dragElement(terrariumElement) {
+    // set 4 positions for positioning on the screen
+    let pos1 = 0,  // Previous mouse X position
+        pos2 = 0,  // Previous mouse Y position  
+        pos3 = 0,  // Current mouse X position
+        pos4 = 0;  // Current mouse Y position
+    terrariumElement.onpointerdown = pointerDrag;
 
-let pos1=0,
-    pos2=0,
-    pos3=0,
-    pos4=0;
+    function pointerDrag(e) {
+    e.preventDefault();
+    console.log(e);
+    // Get the initial mouse cursor position for pos3 and pos4
+    pos3 = e.clientX;  // X coordinate where drag started
+    pos4 = e.clientY;  // Y coordinate where drag started
+    // When the mouse moves, start the drag
+    document.onpointermove = elementDrag;
+    // When the mouse is lifted, stop the drag
+    document.onpointerup = stopElementDrag;
+  }
 
-terrariumElement.onpointerdown=pointerDrag;
+  function elementDrag(e) {
+    // Calculate the new cursor position
+    // pos1 = where the Xmouse WAS - where it IS
+    pos1 = pos3 - e.clientX;  
+    // pos2 = where the Ymouse WAS - where it IS
+    pos2 = pos4 - e.clientY;      
+    // reset pos3 ti current location of Xmouse
+    pos3 = e.clientX;  // New current X position
+    // reset pos4 to current location of Ymouse
+    pos4 = e.clientY;  // New current Y position
+    console.log(pos1, pos2, pos3,pos4);
+    // set the element's new position:
+    terrariumElement.style.top = terrariumElement.offsetTop - pos2 + 'px';
+    terrariumElement.style.left = terrariumElement.offsetLeft - pos1 + 'px';
+  }
 
-
-// Double click
-
-terrariumElement.ondblclick=()=>{
-
-highestZ++;
-terrariumElement.style.zIndex=highestZ;
-
-};
-
-
-
-function pointerDrag(e){
-
-e.preventDefault();
-
-pos3=e.clientX;
-pos4=e.clientY;
-
-
-document
-.getElementById("pickupSound")
-.play();
-
-document.onpointermove=elementDrag;
-
-document.onpointerup=stopElementDrag;
-
-}
-
-
-
-function elementDrag(e){
-
-pos1=pos3-e.clientX;
-
-pos2=pos4-e.clientY;
-
-pos3=e.clientX;
-
-pos4=e.clientY;
-
-
-let newTop=
-terrariumElement.offsetTop-pos2;
-
-let newLeft=
-terrariumElement.offsetLeft-pos1;
-
-
-/* Boundary */
-
-const maxX=
-window.innerWidth-
-terrariumElement.offsetWidth;
-
-const maxY=
-window.innerHeight-
-terrariumElement.offsetHeight;
-
-
-newLeft=Math.max(
-0,
-Math.min(newLeft,maxX)
-);
-
-newTop=Math.max(
-0,
-Math.min(newTop,maxY)
-);
-
-
-terrariumElement.style.top=
-newTop+"px";
-
-terrariumElement.style.left=
-newLeft+"px";
-
-}
-
-
-
-function stopElementDrag(){
-
-
-document
-.getElementById("dropSound")
-.play();
-
-
-/* Save positions */
-
-localStorage.setItem(
-
-terrariumElement.id,
-
-JSON.stringify({
-
-left:terrariumElement.style.left,
-top:terrariumElement.style.top
-
-})
-
-);
-
-
-document.onpointerup=null;
-document.onpointermove=null;
-
-}
-
+  function stopElementDrag() {
+    // stop calculating when mouse is released
+    document.onpointerup = null;
+    document.onpointermove = null;
+  }
 }
